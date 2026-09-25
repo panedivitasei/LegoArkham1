@@ -7,7 +7,7 @@ A mod for the steam release of LEGO Batman 1 that aims to closely imitate the Ar
 ## Features
 - Third-person camera
 - Mouse look and Arkham-style keyboard controls
-- Mouse look for batarang reticle
+- Mouse for batarang reticle
 - Quick grapple: Press F to fire from any spot near the grapple point
 - Glide: Hold jump to glide with Batman, Batgirl or Robin in their default suit
 - Glide Suit repurposed to enable flight
