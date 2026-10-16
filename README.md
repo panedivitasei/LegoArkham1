@@ -10,7 +10,6 @@ This mod is only compatible with the below Steam version of Lego Batman: The Vid
 |---|---|---|
 | LEGOBatman.exe | 1.0.0.0 | 19129138 |
 
-Other executable builds are not verified compatible.
 ## Features
 - Third-person camera
 - Mouse look and Arkham-style keyboard controls
