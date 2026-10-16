@@ -4,6 +4,10 @@ A mod for the steam release of LEGO Batman 1 that aims to closely imitate the Ar
 ![Gliding over the street](docs/glide1.png)
 ![Zipping up a grapple line](docs/grapple.png)
 
+## Compatibility
+This mod is only compatible with the below Steam version of Lego Batman: The Videogame
+| Executable | File version | Steam build |
+| LEGOBatman.exe | 1.0.0.0 | 19129138 |
 ## Features
 - Third-person camera
 - Mouse look and Arkham-style keyboard controls
