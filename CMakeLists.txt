@@ -21,7 +21,7 @@ add_library(dinput8 SHARED
   src/grapple.cpp
   src/vehicle.cpp
   src/studs.cpp
-  src/loosefiles.cpp
+  src/clips.cpp
   src/orbit_camera.cpp
   src/pause_save.cpp
   src/dinput8.def)
@@ -32,4 +32,7 @@ target_link_libraries(dinput8 PRIVATE xinput9_1_0)
 set_target_properties(dinput8 PROPERTIES MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 
 add_custom_command(TARGET dinput8 POST_BUILD
-  COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/LegoArkham.ini $<TARGET_FILE_DIR:dinput8>)
+  COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/LegoArkham.ini $<TARGET_FILE_DIR:dinput8>
+  COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/assets/LegoArkham_glide_batman.an3
+          ${CMAKE_SOURCE_DIR}/assets/LegoArkham_glide_batgirl.an3 ${CMAKE_SOURCE_DIR}/assets/LegoArkham_glide_robin.an3
+          $<TARGET_FILE_DIR:dinput8>)

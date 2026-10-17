@@ -8,11 +8,11 @@
 
 #include "alt_f4.h"
 #include "borderless.h"
+#include "clips.h"
 #include "device_scan.h"
 #include "glide.h"
 #include "grapple.h"
 #include "keybinds.h"
-#include "loosefiles.h"
 #include "mouse_controls.h"
 #include "orbit_camera.h"
 #include "pause_save.h"
@@ -43,7 +43,7 @@ BOOL WINAPI DllMain(HINSTANCE self, DWORD reason, LPVOID) {
   ini = ini.substr(0, ini.find_last_of('\\') + 1) + "LegoArkham.ini";
 
   HMODULE game = GetModuleHandleA(nullptr);
-  loosefiles::Install();
+  clips::Install(ini);
   altf4::Install(game);
   vsync::DefaultOn(game);
   devscan::Install();

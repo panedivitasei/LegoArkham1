@@ -20,7 +20,9 @@ constexpr uintptr_t kUpdateThunk = 0x401037;
 constexpr uintptr_t kPadJoinCallSite = 0x42E833;  // its Player_SetDevice for a pad that pressed any button
 constexpr uintptr_t kKeyboardJoinKey = 0x42E774;  // its `cmp key, DIK_F2` for the keyboard joining player 2
 constexpr uintptr_t kFindDeviceCallSite = 0x42E70E;  // its Input_FindDeviceWithEvent before a join
-constexpr uintptr_t kFindDeviceWithEvent = 0x522300;
+constexpr uintptr_t kFindDeviceWithEvent = 0x522300;  // (skip mask, event, &value, &code, flags): first slot with it
+// Its other callers; the controls menu's input gate (0x4048CB) waits for a frame where it finds nothing.
+constexpr uintptr_t kFindDeviceCallSites[] = {0x4048CB, 0x406373, 0x406466, 0x42E68E, 0x4ACBF6, 0x4B3CBD, 0x5A3A08};
 constexpr uintptr_t kReadSlotCallSite = 0x6DE4AD;  // Input_UpdateDeviceAssignments reading one device slot
 constexpr uintptr_t kReadSlot = 0x524070;
 // Every caller of Input_UpdateDeviceAssignments: the main loop, the loading screen and the FMV player.
@@ -119,9 +121,11 @@ bool refusedJoin;  // the game tried to join player 2 on its own this frame
 
 // The drop-in routine asks for a device with a pending button press before joining a player.
 // With player 1 in and player 2 out, the only join it could make is player 2's, so it finds nothing.
+int __cdecl StuckAwareFindDevice(int excludeMask, int event, void* value, int* code, int flags);
+
 int __cdecl FilteredFindDeviceWithEvent(int excludeMask, int event, void* value, int* code, int flags) {
   if (PlayerJoined(0) && !PlayerJoined(1)) return -1;
-  return Game<FindDeviceFn>(kFindDeviceWithEvent)(excludeMask, event, value, code, flags);
+  return StuckAwareFindDevice(excludeMask, event, value, code, flags);
 }
 
 // Player 2's any-button pad join comes through here; only the game's own requests get through.
@@ -266,10 +270,24 @@ struct SlotSample {
   bool moved = false;  // an axis was off rest
   BYTE axes[8];
   DWORD buttons;
+  DWORD changedAt;  // tick of the last button or stick change
 };
 SlotSample samples[kSlots];
 unsigned frame;
 constexpr int kMoveThreshold = 24;  // axis counts from rest that count as being used
+constexpr DWORD kStuckMs = 1000;
+
+// Input held unchanged this long is a jammed or phantom device, which would otherwise lock the controls menu.
+bool Stuck(int slot) {
+  const SlotSample& s = samples[slot];
+  return s.present && frame - s.frame <= 1 && (s.buttons || s.moved) && GetTickCount() - s.changedAt >= kStuckMs;
+}
+
+int __cdecl StuckAwareFindDevice(int excludeMask, int event, void* value, int* code, int flags) {
+  for (int slot = 0; slot < kSlots; ++slot)
+    if (Stuck(slot)) excludeMask |= 1 << slot;
+  return Game<FindDeviceFn>(kFindDeviceWithEvent)(excludeMask, event, value, code, flags);
+}
 int onsetSlot = -1;  // the slot that most recently went from idle to used
 unsigned onsetFrame;
 int pendingSwitch = -1;  // the device player 1 moves to once it's let go of
@@ -335,13 +353,14 @@ void FollowActiveDevice() {
       return;
     }
   } else {
-    if (onsetSlot >= 0 && onsetFrame == frame && onsetSlot != p1 && IsKeyboardSlot(onsetSlot) != IsKeyboardSlot(p1))
+    if (onsetSlot >= 0 && onsetFrame == frame && onsetSlot != p1 &&
+        (IsKeyboardSlot(onsetSlot) != IsKeyboardSlot(p1) || Stuck(p1)))
       pendingSwitch = onsetSlot;
     else if (onsetSlot == p1 && onsetFrame == frame)
       pendingSwitch = -1;  // back on the current device: stay
     if (pendingSwitch < 0) return;
     const SlotSample& s = samples[pendingSwitch];
-    if (!SlotIsFree(pendingSwitch) || frame - s.frame > 1) {
+    if (!SlotIsFree(pendingSwitch) || frame - s.frame > 1 || Stuck(pendingSwitch)) {
       pendingSwitch = -1;
       return;
     }
@@ -364,6 +383,7 @@ int __cdecl HookReadSlot(DWORD slot, BYTE* x0, BYTE* x1, BYTE* x2, BYTE* x3, BYT
   bool moved = false;
   for (int i = 0; i < 8; ++i) moved |= abs(*axes[i] - (i < 4 ? kAxisCentre : 0)) > kMoveThreshold;
   if (result && Onset(mine, *buttons, moved)) onsetSlot = slot, onsetFrame = frame;
+  if (*buttons != mine.buttons || moved != mine.moved || !mine.present) mine.changedAt = GetTickCount();
   mine.frame = frame;
   mine.present = result != 0;
   mine.moved = moved;
@@ -387,7 +407,7 @@ int __cdecl HookReadSlot(DWORD slot, BYTE* x0, BYTE* x1, BYTE* x2, BYTE* x3, BYT
   for (int other = 0; other < kSlots && !IsHuman(); ++other) {
     const SlotSample& s = samples[other];
     if (other == int(slot) || IsKeyboardSlot(other) == keyboard || !s.present || frame - s.frame > 1) continue;
-    if (!SlotIsFree(other)) continue;
+    if (!SlotIsFree(other) || Stuck(other)) continue;
     // Sticks (0-3) rest at 0x80, triggers (4-7) at 0; the stronger input wins either way.
     for (int i = 0; i < 8; ++i) {
       int rest = i < 4 ? kAxisCentre : 0;
@@ -510,6 +530,8 @@ void Install() {
                   FilteredSetDevice);
   hook::PatchCall(reinterpret_cast<void*>(kFindDeviceCallSite), reinterpret_cast<void*>(kFindDeviceWithEvent),
                   FilteredFindDeviceWithEvent);
+  for (uintptr_t site : kFindDeviceCallSites)
+    hook::PatchCall(reinterpret_cast<void*>(site), reinterpret_cast<void*>(kFindDeviceWithEvent), StuckAwareFindDevice);
   hook::PatchCall(reinterpret_cast<void*>(kReadSlotCallSite), reinterpret_cast<void*>(kReadSlot), HookReadSlot);
   for (uintptr_t site : kUpdateDevicesCallSites)
     hook::PatchCall(reinterpret_cast<void*>(site), reinterpret_cast<void*>(kUpdateDevices), HookUpdateDevices);

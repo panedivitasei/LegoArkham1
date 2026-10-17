@@ -179,10 +179,7 @@ bool JumpHeld(int player) {
   return pad && (*reinterpret_cast<DWORD*>(pad + 112) & kJumpButton);
 }
 
-// The glide is the jump state with jump still held: it starts the moment the hold does, on the
-// way up or at the apex, and a released jump drops to free fall. Only the mod's glide counts,
-// so the boost leaves other suits and characters alone. The cape is the glide clip's own now:
-// a loose CHARS\<NAME>\GLIDE_PC.AN3 per character, see loosefiles.cpp.
+// Mod glide only (jump state, jump held), so the boost skips other suits and characters.
 bool IsGliding(uint8_t* object, int player) {
   return Listed(object) && DefaultSuit(object) && Field<uint8_t>(object, kContextOffset) == kGlideState &&
          (JumpHeld(player) || Field<float>(object, kVelocityOffset + 4) < 0.3f);

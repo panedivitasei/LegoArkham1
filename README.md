@@ -28,7 +28,7 @@ This mod is only compatible with the below Steam version of Lego Batman: The Vid
 - Alt+F4 now works to close the game
 
 ## Install
-Download the release, then copy `dinput8.dll`, `LegoArkham.ini` and the `CHARS` folder next to `LEGOBatman.exe`. 
+Download the release, then copy `dinput8.dll`, `LegoArkham.ini` and the three `LegoArkham_glide_*.an3` clips next to `LEGOBatman.exe`. Works with both the packed and an extracted game, and leaves the game's own files alone. If you are upgrading from an older version, you can delete the `CHARS\BATMAN`, `CHARS\BATGIRL` and `CHARS\ROBIN` files it installed.
 Settings can be configured in `LegoArkham.ini`.
 
 ## Building
