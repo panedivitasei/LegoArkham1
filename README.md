@@ -1,5 +1,5 @@
 # LegoArkham1
-A mod for the steam release of LEGO Batman 1 that aims to closely imitate the Arkham Series gameplay while respecting the original mechanics.
+Arkham-style gameplay mod for the steam release of LEGO Batman 1.
 
 ![Gliding over the street](docs/glide1.png)
 ![Zipping up a grapple line](docs/grapple.png)
@@ -28,8 +28,8 @@ This mod is only compatible with the below Steam version of Lego Batman: The Vid
 - Alt+F4 now works to close the game
 
 ## Install
-Download the release, then copy `dinput8.dll`, `LegoArkham.ini` and the three `LegoArkham_glide_*.an3` clips next to `LEGOBatman.exe`. Works with both the packed and an extracted game.
-
+Download the release, then copy `dinput8.dll`, `LegoArkham.ini` and the three `LegoArkham_glide_*.an3` clips next to `LEGOBatman.exe`. 
+Should work with either an extracted or unextracted game. 
 Settings can be configured in `LegoArkham.ini`.
 
 ## Building
